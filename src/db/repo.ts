@@ -22,9 +22,9 @@ export async function selectThread(threadID: string, currentUserID: string) {
   return thread;
 }
 
-export async function selectThreads(currentUserID: UserID): Promise<
-  ThreadWithMessagesAndParticipants[]
-> {
+export async function selectThreads(
+  currentUserID: UserID
+): Promise<ThreadWithMessagesAndParticipants[]> {
   const threads = await db.query.threads.findMany({
     with: {
       messages: true,
@@ -39,7 +39,7 @@ export async function selectThreads(currentUserID: UserID): Promise<
   return threads;
 }
 export async function selectUsers(currentUserID: UserID) {
-  const dbUsers = await db.select().from(users);
+  const dbUsers = await db.select().from(users).where(eq(users.id, "WS"));
 
   return dbUsers;
 }

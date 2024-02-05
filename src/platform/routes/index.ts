@@ -30,7 +30,7 @@ import { getExtra } from "../../lib/helpers";
 export const loginRoute = async (req: Request, res: Response) => {
   console.log("login");
   const { creds, currentUserID }: LoginRequest = req.body;
-  const user = login(creds, currentUserID);
+  const user = await login(creds, currentUserID);
 
   if (!user) {
     res.status(401).send({ data: undefined });
@@ -60,14 +60,13 @@ export const initRoute = async (req: Request, res: Response) => {
   @route /api/createThread
   @method POST
   @body { userIDs: UserID[], currentUserID: UserID, title?: string, messageText?: string }
-  @response { data: Thread }
+  @response { data: Thread | boolean }
 */
 export const createThreadRoute = async (req: Request, res: Response) => {
   console.log("createThread");
   const { userIDs, title, messageText, currentUserID }: CreateThreadRequest =
     req.body;
-  const thread = await createThread(userIDs, currentUserID, title, messageText);
-  res.send({ data: thread });
+  res.send({ data: true });
 };
 
 /* 

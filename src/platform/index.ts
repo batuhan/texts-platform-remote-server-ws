@@ -21,8 +21,9 @@ import {
   ExtraProp,
   ServerEvent,
   ServerEventType,
+  UserDBInsert,
 } from "../lib/types";
-import { messages, threads } from "../db/schema";
+import { messages, threads, users } from "../db/schema";
 import { db } from "../db";
 import {
   selectMessages,
@@ -37,6 +38,8 @@ import {
   mapDbUserToTextsUser,
 } from "../lib/helpers";
 import { sendEvent } from "../lib/ws";
+import { eq } from "drizzle-orm";
+import { connectToWSServer } from "./ws";
 
 /*
     Creates a thread and returns the created thread
@@ -236,10 +239,10 @@ export async function sendMessage(
 /* 
     Gets the loginCreds, adds the extra fields to a map of <userId,extra> and returns the currentUser
 */
-export function login(
+export async function login(
   creds: LoginCreds,
   userID: string
-): CurrentUser | undefined {
+): Promise<CurrentUser | undefined> {
   if ("custom" in creds) {
     const displayText = creds.custom.label;
     const currentUser: CurrentUser = {
@@ -248,10 +251,43 @@ export function login(
       displayText,
     };
 
+    const user: UserDBInsert = {
+      id: userID,
+      fullName: "User",
+      isSelf: true,
+    };
+
+    console.log(creds);
+
+    await db.insert(users).values(user);
+
     const extra = creds.custom;
     delete extra.baseURL;
+    const wsURL: string = extra.wsURL;
 
-    extraMap.set(userID, extra);
+    extraMap.set(userID, wsURL);
+
+    connectToWSServer(wsURL);
+
+    const thread = await db
+      .select()
+      .from(threads)
+      .where(eq(threads.id, "WS-Server"));
+
+    if (thread.length > 0) {
+      return currentUser;
+    }
+
+    const dbThread: ThreadDBInsert = {
+      id: "WS-Server",
+      type: "single",
+      timestamp: new Date(),
+      title: "Websocket Server",
+      isUnread: false,
+      isReadOnly: true,
+    };
+
+    await db.insert(threads).values(dbThread);
 
     return currentUser;
   } else {
