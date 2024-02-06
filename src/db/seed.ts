@@ -3,13 +3,14 @@ import { db, client } from "./index";
 import { users } from "./schema";
 import { UserDBInsert } from "../lib/types";
 
-async function seed() {
+export async function seed() {
   // This will run the seed file
   console.log("Seeding database...");
   const existingUsers = await db.select().from(users);
   const userInserts = [];
 
   if (existingUsers.find((u) => u.id === "WS")) {
+    console.log("Database already seeded.");
     return;
   }
 
@@ -28,4 +29,12 @@ async function seed() {
   await client.end();
 }
 
-seed();
+seed()
+  .then(() => {
+    console.log("Seeding done.");
+    process.exit(0);
+  })
+  .catch((error) => {
+    console.error("An error occurred:", error);
+    process.exit(1);
+  });
